@@ -1,6 +1,6 @@
 #include "err.h"
 
-struct err_config err_config = {"Error: ", ". Caused by: ", ".\n"};
+struct err_config err_config = {"Error: ", ". Caused by -> ", ".\n"};
 
 struct err {
     const char *message;
@@ -11,16 +11,17 @@ struct err_stack {
 #define ERR_STACK_SIZE 1024
     struct err buffer[ERR_STACK_SIZE];
     unsigned int top_off_abs;
+    unsigned int size;
 };
 
-struct err_stack err_stack;
+_Thread_local struct err_stack err_stack;
 
 struct err *err_stack_get_err(unsigned int i)
 {
     return &err_stack.buffer[i % ERR_STACK_SIZE];
 }
 
-struct err *err_stack_get_top_err()
+struct err *err_stack_get_top_err(void)
 {
     return err_stack_get_err(err_stack.top_off_abs);
 }
@@ -31,11 +32,17 @@ void err_stack_push(const char *message, int code)
     top_err->message = message;
     top_err->code = code;
     ++err_stack.top_off_abs;
+    ++err_stack.size;
+    if (err_stack.size > ERR_STACK_SIZE)
+        err_stack.size = ERR_STACK_SIZE;
 }
 
 void err_stack_pop(void)
 {
+    if (err_stack_empty())
+        return;
     --err_stack.top_off_abs;
+    --err_stack.size;
 }
 
 void err_stack_peek_top(const char **message, int *code)
@@ -52,18 +59,12 @@ void err_stack_clear(void)
 
 bool err_stack_empty(void)
 {
-    return err_stack.top_off_abs == 0;
+    return err_stack.size == 0;
 }
 
 bool err_stack_overflown(void)
 {
     return err_stack.top_off_abs >= ERR_STACK_SIZE;
-}
-
-void get_start_and_size(unsigned int *start, unsigned int *size)
-{
-    *start = err_stack_overflown() ? err_stack.top_off_abs - ERR_STACK_SIZE : 0;
-    *size = err_stack_overflown() ? ERR_STACK_SIZE : err_stack.top_off_abs;
 }
 
 const char *err_stack_get_message(unsigned int i)
@@ -74,9 +75,9 @@ const char *err_stack_get_message(unsigned int i)
     return message;
 }
 
-const char *err_stack_get_suffix(unsigned int i, unsigned int size)
+const char *err_stack_get_suffix(unsigned int i)
 {
-    if (i + 1 == size)
+    if (i == err_stack.top_off_abs - err_stack.size)
         return err_config.suffix;
     else
         return err_config.infix;
@@ -84,27 +85,27 @@ const char *err_stack_get_suffix(unsigned int i, unsigned int size)
 
 void err_stack_dump_file(FILE *file)
 {
-    unsigned int start, size;
-    get_start_and_size(&start, &size);
+    const unsigned int back = err_stack.top_off_abs;
+    const unsigned int front = err_stack.top_off_abs - err_stack.size;
 
-    for (unsigned int i = 0; i < size; ++i) {
+    for (unsigned int i = back; i > front; --i) {
         fprintf(file, "%s%s%s",
                 err_config.prefix,
-                err_stack_get_message(i + start),
-                err_stack_get_suffix(i, size));
+                err_stack_get_message(i - 1),
+                err_stack_get_suffix(i - 1));
     }
 }
 
 void err_stack_dump_strbuf(char *strbuf)
 {
-    unsigned int start, size;
-    get_start_and_size(&start, &size);
+    const unsigned int back = err_stack.top_off_abs;
+    const unsigned int front = err_stack.top_off_abs - err_stack.size;
 
-    for (unsigned int i = 0; i < size; ++i) {
+    for (unsigned int i = back; i > front; --i) {
         sprintf(strbuf, "%s%s%s",
                 err_config.prefix,
-                err_stack_get_message(i + start),
-                err_stack_get_suffix(i, size));
+                err_stack_get_message(i - 1),
+                err_stack_get_suffix(i - 1));
     }
 }
 

@@ -13,6 +13,7 @@ void err_stack_pop(void);
 void err_stack_peek_top(const char **message, int *code);
 void err_stack_clear(void);
 bool err_stack_empty(void);
+bool err_stack_overflown(void);
 void err_stack_dump_file(FILE *file);
 void err_stack_dump_strbuf(char *strbuf);
 

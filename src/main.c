@@ -16,9 +16,17 @@ int main(int argc, char **argv)
     int command_start = 1;
     char **command = &argv[command_start];
 
-    int stat = isorun(command);
-    err_stack_dump_file(stderr);
-    return stat ? EXIT_FAILURE : EXIT_SUCCESS;
+    int exit_code;
+    int ret = isorun(command, &exit_code);
+
+    if (ret) {
+        err_msg("failed running isolated process");
+        err_stack_dump_file(stderr);
+        err_stack_clear();
+        return EXIT_FAILURE;
+    } else {
+        return exit_code;
+    }
 }
 
 static void usage(const char *name)
