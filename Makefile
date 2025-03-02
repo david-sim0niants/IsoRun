@@ -1,26 +1,32 @@
 CC := gcc
-CFLAGS := -Wall -Wextra -O2
+CFLAGS := -Wall -Wfatal-errors -Wextra -Wpedantic -Wconversion -Wshadow
 
 SRC_DIR := src
 BUILD_DIR := build
-BIN_DIR := bin
-TARGET := $(BIN_DIR)/isorun
+
+INCLUDE_DIRS := include
+INCLUDES := $(addprefix -I, $(INCLUDE_DIRS))
 
 SRCS := $(wildcard $(SRC_DIR)/*.c)
 OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
+DEPS := $(OBJS:%.o=%.d)
+
+TARGET := isorun
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS) | $(BIN_DIR)
+-include $(DEPS)
+
+$(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -o $@ -c $^
+	$(CC) $(CFLAGS) $(INCLUDES) -MMD -o $@ -c $<
 
-$(BUILD_DIR) $(BIN_DIR):
+$(BUILD_DIR):
 	mkdir -p $@
 
 clean:
-	rm -rf $(BUILD_DIR) $(BIN_DIR)
+	rm -rf $(BUILD_DIR) $(TARGET)
 
 .PHONY: all clean
