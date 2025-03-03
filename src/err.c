@@ -1,5 +1,8 @@
 #include "err.h"
 
+#include <string.h>
+#include <errno.h>
+
 struct err_config err_config = {"Error: ", ". Caused by -> ", ".\n"};
 
 struct err {
@@ -122,4 +125,26 @@ void err_msg(const char *message)
 void err_code(int code)
 {
     err(NULL, code);
+}
+
+void err_sys(void)
+{
+    err_sys_custom(errno);
+}
+
+void err_sys_custom(int code)
+{
+    err(strerror(code), code);
+}
+
+void err_msg_sys(const char *message)
+{
+    err_sys();
+    err_msg(message);
+}
+
+void err_msg_sys_custom(const char *message, int code)
+{
+    err_sys_custom(code);
+    err_msg(message);
 }

@@ -22,3 +22,8 @@ void err_stack_dump_strbuf(char *strbuf);
 void err(const char *message, int code);
 void err_msg(const char *message);
 void err_code(int code);
+
+void err_sys(void);
+void err_sys_custom(int code);
+void err_msg_sys(const char *message);
+void err_msg_sys_custom(const char *message, int code);
