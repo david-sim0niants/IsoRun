@@ -14,7 +14,7 @@ struct err_stack {
     unsigned int size;
 };
 
-_Thread_local struct err_stack err_stack;
+static _Thread_local struct err_stack err_stack;
 
 struct err *err_stack_get_err(unsigned int i)
 {

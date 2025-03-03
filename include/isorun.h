@@ -1,3 +1,5 @@
 #pragma once
 
-int isorun(char *const command[], int *exit_code);
+#include "stat.h"
+
+stat isorun(char *const command[], int *exit_code);
